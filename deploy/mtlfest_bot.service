@@ -1,0 +1,21 @@
+[Unit]
+Description=mtlfest_bot Application
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+User=attid
+Group=attid
+Type=simple
+WorkingDirectory=/home/mtlfest_bot
+ExecStart=/home/mtlfest_bot/deploy/mtlfest_bot.start.sh
+StandardError=append:/home/mtlfest_bot/service.err.log
+StandardOutput=append:/home/mtlfest_bot/service.out.log
+TimeoutSec=30
+Restart=always
+RestartSec=15
+
+
+[Install]
+WantedBy=multi-user.target
