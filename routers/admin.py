@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+import asyncio
 from aiogram import Router, F
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
@@ -8,8 +9,9 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, FSInputFile
 from aiogram_dialog import DialogManager, StartMode
 
+from config.bot_config import config
 from database.database import (update_user_data, get_user_data, delete_user_data, add_log, export_utm_to_csv,
-                               export_tickets_to_csv, get_user_ids)
+                               export_tickets_to_csv, get_user_ids, add_admin_id)
 from routers import main_dialog
 
 router = Router()
@@ -127,16 +129,27 @@ async def cmd_send(message: Message, state: FSMContext):
             await message.reply(f"Message sent to user ID: {arg}")
         except Exception as e:
             await message.reply(f"Error sending message: {str(e)}")
-    elif arg.lower() == "all":
+    elif arg.lower() in ["all", "en", "ru"]:
         # Send to all users
-        all_users = await get_user_ids()
+        all_users = await get_user_ids(arg.lower())
         success_count = 0
         for user_id in all_users:
             try:
                 await message.reply_to_message.copy_to(chat_id=user_id)
                 success_count += 1
+                await asyncio.sleep(0.3)
             except Exception:
                 pass
         await message.reply(f"Message sent to {success_count} out of {len(all_users)} users.")
     else:
         await message.reply("Error: Invalid argument. Use a user ID or 'all'.")
+
+
+@router.message(Command("add"), F.chat.id.in_((-1002167206567, 84131737)))
+async def cmd_add(message: Message, state: FSMContext):
+    # Split the message text into command and arguments
+    command_parts = message.text.split(maxsplit=1)
+    admin_id = int(command_parts[1])
+    config.admins.append(admin_id)
+    await add_admin_id(admin_id)
+    await message.reply(f"{admin_id} added to admins")

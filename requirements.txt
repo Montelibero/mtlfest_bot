@@ -21,3 +21,5 @@ aiogram-dialog~=2.1.0
 sqlalchemy~=2.0.31
 qrcode~=7.4.2
 motor~=3.5.1
+pyzbar
+opencv-python
