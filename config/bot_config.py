@@ -29,6 +29,7 @@ class Config:
 
     bot: Bot = None
     lock = asyncio.Lock()
+    admins = []
 
 
 config = Config()

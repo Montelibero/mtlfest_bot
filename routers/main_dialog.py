@@ -7,13 +7,14 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Window, Dialog, DialogManager
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, Group, Checkbox, ManagedCheckbox
+from aiogram_dialog.widgets.kbd import Button, Group, Checkbox, ManagedCheckbox, SwitchTo
 from aiogram_dialog.widgets.media import StaticMedia
-from aiogram_dialog.widgets.text import Format
+from aiogram_dialog.widgets.text import Format, Const
+from loguru import logger
 
 from config.bot_config import config
-from database.database import update_user_data, get_user_data, get_last_key
-from database.qr_helpers import create_beautiful_code
+from database.database import update_user_data, get_user_data, get_last_key, add_scan_log
+from database.qr_helpers import create_beautiful_code, decode_qr_code
 
 
 class MainStates(StatesGroup):
@@ -26,6 +27,7 @@ class MainStates(StatesGroup):
     ticket_source = State()
     ticket_dates = State()
     ticket_confirmation = State()
+    ticket_scan = State()
 
 
 async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwargs):
@@ -78,6 +80,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "continue_button": "Продолжить",
 
             "TicketUUID": user_data.get("TicketUUID", None),
+            "is_admin": user_id in config.admins
         }
     else:
         return {
@@ -118,7 +121,8 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "date_5_10": "October 5th - Lectures",
             "date_6_10": "October 6th - City Tour",
             "continue_button": "Continue",
-            "TicketUUID": user_data.get("TicketUUID", None)
+            "TicketUUID": user_data.get("TicketUUID", None),
+            "is_admin": user_id in config.admins
         }
 
 
@@ -150,14 +154,15 @@ main_button_group = Group(
     Button(Format("{support_button}"), id="support", on_click=on_button_clicked),
     width=2)
 
+
 window_start = Window(
     Format("{welcome_text}"),
     main_button_group,
+    SwitchTo(Const("Scan QR"), id="scan_qr", state=MainStates.ticket_scan, when="is_admin"),
     state=MainStates.start,
     getter=get_start_data,
     disable_web_page_preview=True,
 )
-
 window_donate = Window(
     Format("{donate_text}"),
     main_button_group,
@@ -221,6 +226,44 @@ window_ticket_source = Window(
     ),
     state=MainStates.ticket_source,
     getter=get_start_data
+)
+
+async def mh_process_qr(message: Message, widget: MessageInput, dialog_manager: DialogManager) -> None:
+    admin_id = message.from_user.id
+    #await update_user_data(user_id, {"LastEnterDate": datetime.utcnow()})
+    logger.info(f'{message.from_user.id}')
+    if message.photo:
+        await message.reply('is being recognized')
+        await message.bot.download(message.photo[-1], destination=f'data/{message.from_user.id}.jpg')
+
+        qr_data = decode_qr_code(f'data/{message.from_user.id}.jpg')
+        # decode(Image.open(f"qr/{message.from_user.id}.jpg"))
+        if qr_data:
+            logger.info(qr_data)
+
+            user_data = await get_user_data(0, qr_data)
+            if user_data:
+                user_id = user_data.get("UserID")
+                await update_user_data(user_id, {"LastEnterDate": datetime.utcnow()})
+                await message.reply(f'Успешно ! Можете присылать новый код ! или выйти в главное меню /start ')
+                await add_scan_log(admin_id=admin_id, user_id=user_id)
+
+            else:
+                await message.reply('Bad QR code =( or user not found')
+        else:
+            await message.reply('Bad QR code =(')
+
+
+
+
+window_qr_scan = Window(
+    Const("Сканируйте QR-код"),
+    MessageInput(
+        func=mh_process_qr,
+        content_types=ContentType.PHOTO,
+    ),
+    state=MainStates.ticket_scan,
+    #getter=get_start_data
 )
 
 
@@ -295,5 +338,6 @@ dialog = Dialog(
     window_ticket_country,
     window_ticket_source,
     window_ticket_dates,
-    window_ticket_image
+    window_ticket_image,
+    window_qr_scan
 )

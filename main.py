@@ -12,6 +12,7 @@ from aiogram_dialog.setup import setup_dialogs
 from loguru import logger
 
 from config.bot_config import config
+from database.database import get_admins_list
 from routers import admin, main_dialog
 
 
@@ -48,6 +49,7 @@ async def set_commands(bot: Bot):
 
 async def on_startup(bot: Bot, dispatcher: Dispatcher):
     await set_commands(bot)
+    config.admins = await get_admins_list()
     with suppress(TelegramBadRequest):
         await bot.send_message(chat_id=84131737, text='Bot started')
     if config.TEST_MODE:
