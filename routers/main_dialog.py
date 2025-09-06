@@ -1,4 +1,9 @@
-import uuid
+import os
+
+# Absolute path to the data directory
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
 from datetime import datetime
 
 from aiogram.enums import ContentType
@@ -31,6 +36,7 @@ class MainStates(StatesGroup):
 
 
 async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwargs):
+    logger.info("Entering: get_start_data")
     data = await state.get_data()
     user_id = dialog_manager.event.from_user.id
     print(dialog_manager.middleware_data['aiogd_context'].state)
@@ -124,14 +130,17 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "TicketUUID": user_data.get("TicketUUID", None),
             "is_admin": user_id in config.admins
         }
+    logger.info("Exiting: get_start_data")
 
 
 async def on_button_clicked(c: CallbackQuery, button: Button, manager: DialogManager):
+    logger.info("Entering: on_button_clicked")
     if button.widget_id == "ticket_start":
         user_id = c.from_user.id
         user_data = await get_user_data(user_id)
         if user_data and user_data.get("TicketUUID", None):
             await manager.switch_to(MainStates.ticket_confirmation)
+            logger.info("Exiting: on_button_clicked (user has ticket)")
             return
         else:
             async with config.lock:
@@ -140,11 +149,15 @@ async def on_button_clicked(c: CallbackQuery, button: Button, manager: DialogMan
                         "TicketKey": await get_last_key()
                         }
                 await update_user_data(user_id, data)
-            create_beautiful_code(f'./data/{data["TicketUUID"]}.png', data["TicketUUID"], "MTLFEST" + data["TicketKey"])
+            file_path = os.path.join(DATA_DIR, f'{data["TicketUUID"]}.png')
+            logger.info(f"Creating QR code at: {file_path}")
+            create_beautiful_code(file_path, data["TicketUUID"], "MTLFEST" + data["TicketKey"])
             await manager.switch_to(MainStates.ticket_confirmation)
+            logger.info("Exiting: on_button_clicked (new ticket created)")
             return
 
     await manager.switch_to(getattr(MainStates, button.widget_id))
+    logger.info("Exiting: on_button_clicked")
 
 
 main_button_group = Group(
@@ -196,9 +209,11 @@ window_ticket_start = Window(
 
 
 async def mh_process_country(message: Message, widget: MessageInput, dialog_manager: DialogManager) -> None:
+    logger.info("Entering: mh_process_country")
     user_id = message.from_user.id
     await update_user_data(user_id, {"Country": message.text})
     await dialog_manager.switch_to(MainStates.ticket_source)
+    logger.info("Exiting: mh_process_country")
 
 
 window_ticket_country = Window(
@@ -213,9 +228,11 @@ window_ticket_country = Window(
 
 
 async def mh_process_source(message: Message, widget: MessageInput, dialog_manager: DialogManager) -> None:
+    logger.info("Entering: mh_process_source")
     user_id = message.from_user.id
     await update_user_data(user_id, {"Source": message.text})
     await dialog_manager.switch_to(MainStates.ticket_dates)
+    logger.info("Exiting: mh_process_source")
 
 
 window_ticket_source = Window(
@@ -229,14 +246,15 @@ window_ticket_source = Window(
 )
 
 async def mh_process_qr(message: Message, widget: MessageInput, dialog_manager: DialogManager) -> None:
+    logger.info("Entering: mh_process_qr")
     admin_id = message.from_user.id
     #await update_user_data(user_id, {"LastEnterDate": datetime.utcnow()})
     logger.info(f'{message.from_user.id}')
     if message.photo:
         await message.reply('is being recognized')
-        await message.bot.download(message.photo[-1], destination=f'data/{message.from_user.id}.jpg')
+        await message.bot.download(message.photo[-1], destination=os.path.join(DATA_DIR, f'{message.from_user.id}.jpg'))
 
-        qr_data = decode_qr_code(f'data/{message.from_user.id}.jpg')
+        qr_data = decode_qr_code(os.path.join(DATA_DIR, f'{message.from_user.id}.jpg'))
         # decode(Image.open(f"qr/{message.from_user.id}.jpg"))
         if qr_data:
             logger.info(qr_data)
@@ -252,7 +270,7 @@ async def mh_process_qr(message: Message, widget: MessageInput, dialog_manager: 
                 await message.reply('Bad QR code =( or user not found')
         else:
             await message.reply('Bad QR code =(')
-
+    logger.info("Exiting: mh_process_qr")
 
 
 
@@ -268,10 +286,13 @@ window_qr_scan = Window(
 
 
 async def on_date_selected(c: CallbackQuery, checkbox: ManagedCheckbox, manager: DialogManager):
+    logger.info("Entering: on_date_selected")
     manager.dialog_data[checkbox.widget_id] = checkbox.is_checked()
+    logger.info("Exiting: on_date_selected")
 
 
 async def on_dates_confirmed(c: CallbackQuery, button: Button, manager: DialogManager):
+    logger.info("Entering: on_dates_confirmed")
     user_id = c.from_user.id
     async with config.lock:
         data = {"date_4_10": manager.dialog_data.get("date_4_10", False),
@@ -286,6 +307,7 @@ async def on_dates_confirmed(c: CallbackQuery, button: Button, manager: DialogMa
     # create_beautiful_code(f'./data/{data["TicketUUID"]}.png', data["TicketUUID"], "MTLFEST" + data["TicketKey"])
 
     await manager.switch_to(MainStates.ticket_confirmation)
+    logger.info("Exiting: on_dates_confirmed")
 
 
 window_ticket_dates = Window(
@@ -320,7 +342,7 @@ window_ticket_image = Window(
     #     path="path/to/your/image.jpg"
     # ),
     StaticMedia(
-        path=Format('./data/{TicketUUID}.png'),
+        path=Format(os.path.join(DATA_DIR, '{TicketUUID}.png')),
         type=ContentType.PHOTO
     ),
     Format("{show_ticket_text}"),

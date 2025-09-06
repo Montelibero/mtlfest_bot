@@ -3,6 +3,7 @@ from datetime import datetime
 
 import aiofiles
 from motor.motor_asyncio import AsyncIOMotorClient
+from loguru import logger
 
 from config.bot_config import config
 
@@ -15,21 +16,27 @@ logs_collection = db.logs
 
 
 async def get_user_data(user_id, ticket_key=None):
+    logger.info(f"Entering: get_user_data(user_id={user_id}, ticket_key={ticket_key})")
     if ticket_key:
-        return await users_collection.find_one({"TicketUUID": ticket_key})
+        result = await users_collection.find_one({"TicketUUID": ticket_key})
     else:
-        return await users_collection.find_one({"UserID": user_id})
+        result = await users_collection.find_one({"UserID": user_id})
+    logger.info(f"Exiting: get_user_data")
+    return result
 
 
 async def update_user_data(user_id, data):
+    logger.info(f"Entering: update_user_data(user_id={user_id}, data={data})")
     await users_collection.update_one(
         {"UserID": user_id},
         {"$set": data},
         upsert=True
     )
+    logger.info(f"Exiting: update_user_data")
 
 
 async def get_last_key() -> str:
+    logger.info(f"Entering: get_last_key")
     last_key = await config_collection.find_one({"Key": "LastTicketKey"})
     if last_key is None:
         start_key = 11
@@ -46,34 +53,42 @@ async def get_last_key() -> str:
                 {"$set": {"Value": start_key}},
                 upsert=True
             )
+            logger.info(f"Exiting: get_last_key with key {ticket_key}")
             return ticket_key
         start_key += 1
 
 
 async def delete_user_data(user_id: int):
-    result = await users_collection.delete_one({"UserID": user_id})
+    logger.info(f"Entering: delete_user_data(user_id={user_id})")
+    await users_collection.delete_one({"UserID": user_id})
+    logger.info(f"Exiting: delete_user_data")
 
 
 async def add_log(action: str, details: dict = None):
+    logger.info(f"Entering: add_log(action={action}, details={details})")
     log_entry = {
         "timestamp": datetime.utcnow(),
         "action": action,
         "details": details or {}
     }
     await logs_collection.insert_one(log_entry)
+    logger.info(f"Exiting: add_log")
 
 
 # Универсальная функция для сохранения данных в CSV файл
 async def save_to_csv(filename, data, headers):
+    logger.info(f"Entering: save_to_csv(filename={filename})")
     async with aiofiles.open(filename, mode='w', newline='', encoding='utf-8') as file:
         await file.write(','.join(headers) + '\n')
 
         for item in data:
             row = [str(item.get(header, "N/A")).replace('\n', ' ').replace('\r', '') for header in headers]
             await file.write(','.join(row) + '\n')
+    logger.info(f"Exiting: save_to_csv")
 
 
 async def export_utm_to_csv():
+    logger.info(f"Entering: export_utm_to_csv")
     utm_logs = await logs_collection.find({"action": "utm"}).to_list(length=None)
 
     utm_data = []
@@ -87,10 +102,12 @@ async def export_utm_to_csv():
         })
 
     await save_to_csv('data/output.csv', utm_data, ["date", "user_id", "utm_data"])
+    logger.info(f"Exiting: export_utm_to_csv")
     return utm_data
 
 
 async def export_tickets_to_csv():
+    logger.info(f"Entering: export_tickets_to_csv")
     tickets = await users_collection.find({"TicketDate": {"$exists": True}}).to_list(length=None)
 
     data = []
@@ -103,35 +120,44 @@ async def export_tickets_to_csv():
         })
 
     await save_to_csv('data/output.csv', data, ["date", "user_id", "ticket_key"])
+    logger.info(f"Exiting: export_tickets_to_csv")
     return data
 
 
 async def get_user_ids(lang=None):
+    logger.info(f"Entering: get_user_ids(lang={lang})")
     query = {}
     if lang:
         if lang in ["ru", "en"]:
             query = {"Lang": lang}
     user_ids = await users_collection.distinct("UserID", query)
+    logger.info(f"Exiting: get_user_ids")
     return user_ids
 
 async def add_admin_id(admin_id: int):
+    logger.info(f"Entering: add_admin_id(admin_id={admin_id})")
     """Добавляет новый admin_id в массив Admins в коллекции config"""
     await config_collection.update_one(
         {"Key": "Admins"},
         {"$addToSet": {"Value": admin_id}},
         upsert=True
     )
+    logger.info(f"Exiting: add_admin_id")
 
 
 async def get_admins_list():
+    logger.info(f"Entering: get_admins_list")
     """Получает весь список admin_id из массива Admins в коллекции config"""
     config_entry = await config_collection.find_one({"Key": "Admins"})
     if config_entry and "Value" in config_entry:
+        logger.info(f"Exiting: get_admins_list")
         return config_entry["Value"]
+    logger.info(f"Exiting: get_admins_list (no admins found)")
     return []
 
 
 async def add_scan_log(admin_id: int, user_id: int):
+    logger.info(f"Entering: add_scan_log(admin_id={admin_id}, user_id={user_id})")
     """Добавляет запись в массив ScanLog в коллекции config
     со значениями: ID пользователя, ID билета и текущей датой"""
     log_entry = {
@@ -145,6 +171,7 @@ async def add_scan_log(admin_id: int, user_id: int):
         {"$push": {"Value": log_entry}},
         upsert=True
     )
+    logger.info(f"Exiting: add_scan_log")
 
 
 if __name__ == '__main__':
