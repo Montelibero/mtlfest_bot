@@ -1,10 +1,13 @@
 # Use the official Python image
 FROM python:3.12-slim
 
-# Install uv and system dependencies
-RUN pip install uv && \
-    apt-get update && apt-get install -y libgl1-mesa-glx libzbar0 && \
+# Install system dependencies
+RUN apt-get update && apt-get install -y curl libgl1-mesa-glx libzbar0 && \
     rm -rf /var/lib/apt/lists/*
+
+# Install uv using the recommended installer
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Set the working directory
 WORKDIR /app
