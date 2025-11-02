@@ -61,10 +61,25 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
                            "<code>TBRsYzKKNxM6jjyD3d1Adva2TbgkiAMLux</code>\n"
                            "<b>Monero</b>\n"
                            "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n\n",
-            "calendar_text": "Основная фестивальная программа: "
-                             "\n\nOct,4 Барбекю-пати и кинопоказ в Montelibero Space, с 9 утра до последнего гостя https://maps.app.goo.gl/JkaAniGZCmPEkhHf8 чтобы гарантировать место на фильме нужна дополнительная регистрация https://lu.ma/cipkbvx6"
-                             "\n\nOct,5 MTL-бранч в кафе Your time (Ваффл-маффл), с 11 до 13, Основная программа: Лекторий, маркет, выставка, детская зона - в Focuss.Space и Adriatic open school, с 13 до 21, MTL пати в Focuss.Space, с 21 до последнего гостя https://maps.app.goo.gl/bC4ZSQJc7VtvFqgf8"
-                             "\n\nOct,6 Афтепати в MTL-City - с 12 до 20 - эксурсия, лекторий, детская зона, квесты https://maps.app.goo.gl/1N6Bos8cuaTf2vcM9?g_st=ic бесплатный трансфер из Бара, от СК Тополица, необходима дополнительная регистрация https://tinyurl.com/yhnkmhy5",
+            "calendar_text": """🎉 Основная программа Monteliber.Zaedno Fest 2025
+\n\n📅 27 ноября — открытие фестиваля
+\n\nПодгорица, Черногорияв отеле Kings Park Hotel (https://maps.app.goo.gl/hKYJWZfxodnRRNcn7?g_st=ipc)
+\n\nФестиваль ждёт вас с 12 часов. 
+\n\n📢 Само открытие фестиваля — в 13:00
+\n\nВстречаемся в отеле, знакомимся и начинаются первые лекции.
+\n\nВечером после лекций — вечеринка в неформальной обстановке в уютном баре Богарт (https://maps.app.goo.gl/6Ns29oPRzqtRVc598?g_st=ipc)
+\n\n📅 28 ноября – второй день.
+\n\n🎤 Лекции и панельные дискуссии на английском языке
+\n\n🌍 Темы: сообщества, предпринимательство, децентрализация, гражданские инициативы
+\n\n🕐 С 12:00 до 19:00
+\n\n🎉 Вечером — Afterparty Montelibero Fest, для тех, кто захочет вместе посидеть за одним столом и обсудить, что итнтересного узнали и какие выводы сделали.
+\n\n🎟️ Участие
+\n\nФестиваль бесплатный, по предварительной регистрации.
+\n\nКоличество мест ограничено.
+\n\n📢 Следите за обновлениями:
+\n\nНовости и анонсы
+\n\nпубликуются в Telegram-канале Montelibero Fest, (https://t.me/monteliberofestival) так же на сайте. (https://mtlfest.me/2025/ru)
+\n\nЖдём вас! 🤗""",
             "support_text": "По все вопросам фестиваля вы можете написать в бот @mtlfest_support_bot "
                             "там вам ответят волонтеры, так быстро как только смогут.",
             "show_ticket_text": "Это твой бесплатный билет на основное мероприятие 5 октября. Его нужно будет показать на входе с экрана телефона или распечатать. Для участия в мероприятиях 4 и 6 октября требуется дополнительная регистрация, в разделе \"расписание\" в этом боте",
@@ -73,7 +88,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "calendar_button": "Расписание",
             "support_button": "Поддержка",
             "back_button": "Назад",
-            "ticket_start_text": "Я помогу зарегистрироваться на MTL FEST 2024. Нажми Start чтобы продолжить",
+            "ticket_start_text": "Я помогу зарегистрироваться на MTL FEST 2025. Нажми Start чтобы продолжить",
             "start_button": "Start",
             "ticket_country_text": "Нам нужно немного информации о тебе, чтобы сделать наши следующие ивенты лучше. "
                                    "В какой стране ты сейчас живешь?",
@@ -90,7 +105,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
         }
     else:
         return {
-            "welcome_text": "Welcome! I'm the MTL FEST 2024 assistant bot. Please choose an action:",
+            "welcome_text": "Welcome! I'm the MTL FEST 2025 assistant bot. Please choose an action:",
             "donate_text": "We make the event possible thanks to your donations.\n"
                            "Please help use any of possible ways: \n"
                            "<b>EURMTL | USDM | MTL| SATSMTL | XLM </b>\n"
@@ -103,11 +118,25 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
                            "<code>TBRsYzKKNxM6jjyD3d1Adva2TbgkiAMLux</code>\n"
                            "<b>Monero</b>\n"
                            "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n",
-            "calendar_text": "Main events of festival program: "
-                             "\n\nOct,4 Barbecue-party & Cinema at Montelibero Space, from 9AM till last guest https://maps.app.goo.gl/JkaAniGZCmPEkhHf8 need additional registration for cinema https://lu.ma/cipkbvx6"
-                             "\n\nOct,5 MTL-brunch at Your time cafe, 11AM-13, Main program: Lectorium, market, exhibition, children's zone - at Focuss.Space and Adriatic open school, 13-21, MTL Party at Focuss.Space, 21 till last guest https://maps.app.goo.gl/bC4ZSQJc7VtvFqgf8"
-                             "\n\nOct,6 MTL-City - from 12AM till 20 Excursion, lecture hall, children's zone, quests https://maps.app.goo.gl/1N6Bos8cuaTf2vcM9?g_st=ic free transfer from Bar, Topolica SC, more info at support bot",
-            "support_text": "If you have any questions about the festival, feel free to reach "
+            "calendar_text": """🎉 Main programme of Monteliber.Zaedno Fest 2025
+\n\n📅 27 November — Opening Day
+\n\nWelcome session, introductions and first lectures
+\nPodgorica, Montenegro
+\n\n      Gathering from 12 noon
+\n\n📢 The festival itself opens at 1 p.m.
+\n\n✨ Welcome session, introductions and first lectures
+\n\n💬 Informal communication and evening networking
+\n\nIn the evening after the lectures — a party in an informal setting at the cosy Bogart bar
+\n\n📅 28 November — Second Festival Day
+\n\n🎤 Lectures and panel discussions in English
+\n\n🌍 Topics: communities, entrepreneurship, decentralisation, civic initiatives
+\n\n🕐 From 12:00 to 21:00
+\n\n🎉 In the evening — Montelibero Fest Afterparty, for those who want to sit down together and discuss what they have learned and what conclusions they have drawn.
+\n\n🎟️ Participation
+\n\nThe festival is free, but advance registration is required.
+\n\nThe number of places is limited.
+\n\n📢 Stay tuned for updates:
+\n\nNews and announcements are published on the Montelibero Fest Telegram channel. """
                             "out via @mtlfest_support_bot. "
                             "Our volunteers will get back to you as soon as possible.",
             "show_ticket_text": "This is your free ticket to the main event on October, 5. You will need to show it at the gates for entrance on your mobile or printed. If you would like to attend other days of the festival please go to the website mtlfest.me/en and book them separately. Thank you",

@@ -172,3 +172,5 @@ cython_debug/
 /data/b939c0c3c590499ba0805335802316c1.png
 /data/output.csv
 /data/sss.png
+/.idea/copilot.data.migration.agent.xml
+/.idea/copilot.data.migration.edit.xml
