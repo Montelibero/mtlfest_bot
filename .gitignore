@@ -159,18 +159,5 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
-/.idea/inspectionProfiles/profiles_settings.xml
-/.idea/.gitignore
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/mtlfest_bot.iml
-/.idea/vcs.xml
-/data/59a7a1229e8a4d4a9c4177cb50c5a560.png
-/data/80f1e1bb42c44169b029ec85795bef47.png
-/data/84131737.jpg
-/data/b939c0c3c590499ba0805335802316c1.png
-/data/output.csv
-/data/sss.png
-/.idea/copilot.data.migration.agent.xml
-/.idea/copilot.data.migration.edit.xml
+.idea/
+/data/
