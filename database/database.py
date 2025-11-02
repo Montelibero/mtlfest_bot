@@ -1,3 +1,37 @@
+"""MongoDB collection schemas used by the bot.
+
+Collections
+-----------
+users
+    Telegram profile-centric document keyed by ``UserID``. Structure is a flat dict; typical shape::
+
+        {
+            "UserID": int,             # Telegram ID (primary key)
+            "Lang": str,               # 'ru' | 'en'
+            "StartDate": datetime,     # first /start usage
+            "utm": str,                # optional marketing tag
+            "TicketUUID": str,         # hex ticket identifier
+            "TicketDate": datetime,    # ticket creation timestamp
+            "TicketKey": str,          # zero-padded numeric code
+            "Country": str,            # questionnaire answer
+            "Source": str,             # questionnaire answer
+            "date_4_10": bool,
+            "date_5_10": bool,
+            "date_6_10": bool,
+            "LastEnterDate": datetime  # last QR scan
+        }
+
+    Fields are added lazily via ``update_user_data``, so older records may miss keys.
+config
+
+    Key-value collection for operational state. Known keys: ``LastTicketKey`` (tracks the
+    last numeric ticket suffix), ``Admins`` (array of privileged user IDs) and ``ScanLog``
+    (array of scan audit entries with ``admin_id``, ``user_id``, ``scanned_at``).
+logs
+    Event log with documents shaped as ``{"timestamp": datetime, "action": str,
+    "details": dict}``. Used for UTM tracking and other append-only audit records.
+"""
+
 import asyncio
 from datetime import datetime
 
