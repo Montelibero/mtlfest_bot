@@ -1,5 +1,5 @@
 import os
-import uuid
+from uuid import uuid4
 
 # Absolute path to the data directory
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -210,7 +210,7 @@ async def on_button_clicked(c: CallbackQuery, button: Button, manager: DialogMan
             return
         else:
             async with config.lock:
-                ticket_uuid = uuid.uuid4().hex
+                ticket_uuid = uuid4().hex
                 ticket_key = await get_last_key()
                 created_at = datetime.utcnow()
                 await update_user_data(user_id, {
