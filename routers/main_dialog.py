@@ -220,7 +220,10 @@ async def on_button_clicked(c: CallbackQuery, button: Button, manager: DialogMan
                 })
             logger.info("Generated ticket %s for user %s", ticket_uuid, user_id)
             _ensure_ticket_qr(ticket_uuid, ticket_key)
+            # questionnaire on
             await manager.switch_to(MainStates.ticket_start)
+            # questionnaire off
+            # await manager.switch_to(MainStates.ticket_confirmation)
             logger.info("Exiting: on_button_clicked (new ticket created)")
             return
 
