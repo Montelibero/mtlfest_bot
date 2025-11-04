@@ -3,25 +3,35 @@
 Collections
 -----------
 users
-    Telegram profile-centric document keyed by ``UserID``. Structure is a flat dict; typical shape::
+    Telegram profile-centric document keyed by ``UserID``. Base document is a flat dict with
+    optional seasonal ticket data nested under ``tickets``; typical shape::
 
         {
             "UserID": int,             # Telegram ID (primary key)
             "Lang": str,               # 'ru' | 'en'
             "StartDate": datetime,     # first /start usage
             "utm": str,                # optional marketing tag
-            "TicketUUID": str,         # hex ticket identifier
-            "TicketDate": datetime,    # ticket creation timestamp
-            "TicketKey": str,          # zero-padded numeric code
-            "Country": str,            # questionnaire answer
-            "Source": str,             # questionnaire answer
-            "date_4_10": bool,
-            "date_5_10": bool,
-            "date_6_10": bool,
-            "LastEnterDate": datetime  # last QR scan
+            "tickets": {
+                "2024": {
+                    "uuid": str,                 # hex ticket identifier
+                    "key": str,                  # zero-padded numeric code
+                    "created_at": datetime,      # ticket creation timestamp
+                    "last_scanned_at": datetime, # last QR validation timestamp
+                    "questionnaire": {
+                        "country": str,
+                        "source": str,
+                    },
+                    "dates": {
+                        "date_4_10": bool,
+                        "date_5_10": bool,
+                        "date_6_10": bool,
+                    }
+                },
+                "2025": { ... }
+            }
         }
 
-    Fields are added lazily via ``update_user_data``, so older records may miss keys.
+    Fields are added lazily via ``update_user_data`` and migrations, so older records may miss keys.
 config
 
     Key-value collection for operational state. Known keys: ``LastTicketKey`` (tracks the
@@ -34,6 +44,7 @@ logs
 
 import asyncio
 from datetime import datetime
+from typing import Any, Dict
 
 import aiofiles
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -47,6 +58,20 @@ db = client.FEST
 users_collection = db.users
 config_collection = db.config
 logs_collection = db.logs
+
+_TICKET_FIELD_MAP = {
+    "TicketUUID": "uuid",
+    "TicketKey": "key",
+    "TicketDate": "created_at",
+    "LastEnterDate": "last_scanned_at",
+}
+
+_QUESTION_FIELD_MAP = {
+    "Country": "country",
+    "Source": "source",
+}
+
+_DATE_FIELDS = ("date_4_10", "date_5_10", "date_6_10")
 
 
 async def get_user_data(user_id, ticket_key=None):
@@ -96,6 +121,117 @@ async def delete_user_data(user_id: int):
     logger.info(f"Entering: delete_user_data(user_id={user_id})")
     await users_collection.delete_one({"UserID": user_id})
     logger.info(f"Exiting: delete_user_data")
+
+
+async def migrate_ticket_fields_to_season(
+    year: str = "2024",
+    *,
+    remove_original_fields: bool = False,
+) -> Dict[str, Any]:
+    """Copy legacy ticket fields into ``tickets.<year>`` documents.
+
+    Parameters
+    ----------
+    year
+        Ticket season key to populate inside the ``tickets`` dict.
+    remove_original_fields
+        When ``True``, legacy top-level fields (``TicketUUID``, ``date_4_10`` …)
+        are removed after migration. Default preserves them for backward
+        compatibility until the bot is updated to read the nested structure.
+
+    Returns
+    -------
+    dict
+        Summary counters: ``migrated`` (documents updated) and ``skipped``
+        (documents without legacy data or already migrated).
+    """
+
+    logger.info(
+        "Entering: migrate_ticket_fields_to_season(year={}, remove_original_fields={})",
+        year,
+        remove_original_fields,
+    )
+
+    legacy_fields = (
+        set(_TICKET_FIELD_MAP.keys())
+        | set(_QUESTION_FIELD_MAP.keys())
+        | set(_DATE_FIELDS)
+    )
+
+    legacy_filter = {"$or": [{field: {"$exists": True}} for field in legacy_fields]}
+
+    migrated = 0
+    skipped = 0
+
+    async for user in users_collection.find(legacy_filter):
+        tickets_field = user.get("tickets")
+        if isinstance(tickets_field, dict) and year in tickets_field:
+            skipped += 1
+            continue
+
+        ticket_entry: Dict[str, Any] = {}
+
+        for mongo_key, nested_key in _TICKET_FIELD_MAP.items():
+            value = user.get(mongo_key)
+            if value is not None:
+                ticket_entry[nested_key] = value
+
+        questionnaire: Dict[str, Any] = {}
+        for mongo_key, nested_key in _QUESTION_FIELD_MAP.items():
+            value = user.get(mongo_key)
+            if value is not None:
+                questionnaire[nested_key] = value
+        if questionnaire:
+            ticket_entry["questionnaire"] = questionnaire
+
+        dates: Dict[str, bool] = {}
+        for date_field in _DATE_FIELDS:
+            if date_field in user:
+                dates[date_field] = bool(user.get(date_field))
+        if dates:
+            ticket_entry["dates"] = dates
+
+        if not ticket_entry:
+            skipped += 1
+            continue
+
+        update_ops: Dict[str, Any] = {}
+        set_ops: Dict[str, Any] = {}
+        unset_ops: Dict[str, Any] = {}
+
+        if isinstance(tickets_field, dict):
+            set_ops[f"tickets.{year}"] = ticket_entry
+        else:
+            set_ops["tickets"] = {year: ticket_entry}
+
+        if remove_original_fields:
+            for mongo_key in _TICKET_FIELD_MAP.keys():
+                if mongo_key in user:
+                    unset_ops[mongo_key] = ""
+            for mongo_key in _QUESTION_FIELD_MAP.keys():
+                if mongo_key in user:
+                    unset_ops[mongo_key] = ""
+            for date_field in _DATE_FIELDS:
+                if date_field in user:
+                    unset_ops[date_field] = ""
+
+        if set_ops:
+            update_ops["$set"] = set_ops
+        if unset_ops:
+            update_ops["$unset"] = unset_ops
+
+        if update_ops:
+            await users_collection.update_one({"_id": user["_id"]}, update_ops)
+            migrated += 1
+        else:
+            skipped += 1
+
+    logger.info(
+        "Exiting: migrate_ticket_fields_to_season (migrated={}, skipped={})",
+        migrated,
+        skipped,
+    )
+    return {"migrated": migrated, "skipped": skipped}
 
 
 async def add_log(action: str, details: dict = None):
@@ -210,5 +346,5 @@ async def add_scan_log(admin_id: int, user_id: int):
 
 if __name__ == '__main__':
     # print(asyncio.run(get_user_data(0, "ab280e7b8d3e4e0ea3f5351f6408336e")))
-    _ = asyncio.run(get_user_ids('en'))
+    _ = asyncio.run(migrate_ticket_fields_to_season(remove_original_fields=True))
     print(len(_), _)
