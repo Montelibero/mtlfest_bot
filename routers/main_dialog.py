@@ -1,10 +1,12 @@
 import os
+import uuid
 
 # Absolute path to the data directory
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
@@ -20,6 +22,33 @@ from loguru import logger
 from config.bot_config import config
 from database.database import update_user_data, get_user_data, get_last_key, add_scan_log
 from database.qr_helpers import create_beautiful_code, decode_qr_code
+
+
+def _get_ticket_info(user_data: Dict[str, Any], season: str) -> Dict[str, Any]:
+    tickets = user_data.get("tickets") if user_data else None
+    if isinstance(tickets, dict):
+        return tickets.get(season, {}) or {}
+    return {}
+
+
+def _find_ticket_season(user_data: Dict[str, Any], ticket_uuid: str) -> Optional[str]:
+    tickets = user_data.get("tickets") if user_data else None
+    season = config.CURRENT_TICKET_SEASON
+    if isinstance(tickets, dict):
+        info = tickets.get(season)
+        if isinstance(info, dict) and info.get("uuid") == ticket_uuid:
+            return season
+    return None
+
+
+def _ensure_ticket_qr(ticket_uuid: Optional[str], ticket_key: Optional[str]) -> Optional[str]:
+    if not ticket_uuid or not ticket_key:
+        return None
+    file_path = os.path.join(DATA_DIR, f"{ticket_uuid}.png")
+    if not os.path.exists(file_path):
+        logger.info("Regenerating QR code for ticket %s", ticket_uuid)
+        create_beautiful_code(file_path, ticket_uuid, "MTLFEST" + ticket_key)
+    return file_path
 
 
 class MainStates(StatesGroup):
@@ -39,11 +68,21 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
     logger.info("Entering: get_start_data")
     data = await state.get_data()
     user_id = dialog_manager.event.from_user.id
-    print(dialog_manager.middleware_data['aiogd_context'].state)
-    if dialog_manager.middleware_data['aiogd_context'].state == MainStates.ticket_confirmation:
-        user_data = await get_user_data(user_id)
-    else:
-        user_data = {}
+    current_state = dialog_manager.middleware_data['aiogd_context'].state
+    user_data = await get_user_data(user_id)
+
+    season = config.CURRENT_TICKET_SEASON
+    ticket_info = _get_ticket_info(user_data, season)
+    ticket_uuid = ticket_info.get("uuid")
+    ticket_key = ticket_info.get("key")
+    _ensure_ticket_qr(ticket_uuid, ticket_key)
+
+    dates_selected = ticket_info.get("dates", {}) if isinstance(ticket_info, dict) else {}
+    if current_state == MainStates.ticket_dates:
+        dialog_manager.dialog_data.update({
+            "date_27_11": dates_selected.get("date_27_11", False),
+            "date_28_11": dates_selected.get("date_28_11", False),
+        })
 
     lang = data.get('lang', 'en')
     if lang == 'ru':
@@ -80,35 +119,31 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
 \n\nНовости и анонсы
 \n\nпубликуются в Telegram-канале Montelibero Fest, (https://t.me/monteliberofestival) так же на сайте. (https://mtlfest.me/2025/ru)
 \n\nЖдём вас! 🤗""",
-            "support_text": "По все вопросам фестиваля вы можете написать в бот @mtlfest_support_bot "
-                            "там вам ответят волонтеры, так быстро как только смогут.",
-            "show_ticket_text": "Это твой бесплатный билет на основное мероприятие 5 октября. Его нужно будет показать на входе с экрана телефона или распечатать. Для участия в мероприятиях 4 и 6 октября требуется дополнительная регистрация, в разделе \"расписание\" в этом боте",
+            "support_text": "По всем вопросам фестиваля можно написать в @mtlfest_support_bot — волонтёры ответят как можно быстрее.",
+            "show_ticket_text": "Это твой бесплатный билет на Monteliber.Zaedno Fest 27–28 ноября 2025. Покажи QR на входе с телефона или распечатай его. Если планы изменились — дай знать команде поддержки.",
             "donate_button": "Донатить",
             "ticket_button": "Мой билет",
             "calendar_button": "Расписание",
             "support_button": "Поддержка",
             "back_button": "Назад",
-            "ticket_start_text": "Я помогу зарегистрироваться на MTL FEST 2025. Нажми Start чтобы продолжить",
+            "ticket_start_text": "Я помогу зарегистрироваться на Monteliber.Zaedno Fest 2025. Нажми Start, чтобы начать.",
             "start_button": "Start",
-            "ticket_country_text": "Нам нужно немного информации о тебе, чтобы сделать наши следующие ивенты лучше. "
-                                   "В какой стране ты сейчас живешь?",
-            "ticket_source_text": "Откуда ты узнал о фестивале?",
-            "ticket_dates_text": "Выбери, пожалуйста, в какие дни ты бы хотел посетить мероприятия фестиваля. "
-                                 "Это важно, чтобы мы планировали мероприятия с учетом вместимости площадок",
-            "date_4_10": "4/10 кинотеатр",
-            "date_5_10": "5/10 лекции",
-            "date_6_10": "6/10 сити",
+            "ticket_country_text": "Нам нужно немного информации, чтобы подготовить площадку. В какой стране ты сейчас живёшь?",
+            "ticket_source_text": "Расскажи, откуда узнал о фестивале?",
+            "ticket_dates_text": "Выбери дни, когда планируешь прийти. Это поможет нам рассчитать нагрузку на площадку.",
+            "date_27_11": "27 ноября — открытие и воркшопы",
+            "date_28_11": "28 ноября — лекции и afterparty",
             "continue_button": "Продолжить",
-
-            "TicketUUID": user_data.get("TicketUUID", None),
+            "TicketUUID": ticket_uuid,
+            "TicketKey": ticket_key,
             "is_admin": user_id in config.admins
         }
     else:
         return {
-            "welcome_text": "Welcome! I'm the MTL FEST 2025 assistant bot. Please choose an action:",
-            "donate_text": "We make the event possible thanks to your donations.\n"
-                           "Please help use any of possible ways: \n"
-                           "<b>EURMTL | USDM | MTL| SATSMTL | XLM </b>\n"
+            "welcome_text": "Welcome! I'm the Monteliber.Zaedno Fest assistant bot. Choose an option:",
+            "donate_text": "We run this festival thanks to your donations.\n"
+                           "Please support us in any of the available ways: \n"
+                           "<b>EURMTL | USDM | MTL | SATSMTL | XLM</b>\n"
                            "<code>GBJ4BPR6WESHII6TO4ZUQBB6NJD3NBTK5LISVNKXMPOMMYSLR5DOXMFD</code>\n"
                            "<b>BTC</b>\n"
                            "<code>bc1qkyevfyq052dfx3jtlelulz3t2gvkq9jtpsee5m</code>\n"
@@ -139,24 +174,23 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
 \n\nNews and announcements are published on the Montelibero Fest Telegram channel. """
                             "out via @mtlfest_support_bot. "
                             "Our volunteers will get back to you as soon as possible.",
+            "support_text": "For any questions message @mtlfest_support_bot — volunteers will reply as soon as possible.",
             "show_ticket_text": "This is your free ticket to the main event on October, 5. You will need to show it at the gates for entrance on your mobile or printed. If you would like to attend other days of the festival please go to the website mtlfest.me/en and book them separately. Thank you",
             "donate_button": "Donate",
             "ticket_button": "My Ticket",
             "calendar_button": "Schedule",
             "support_button": "Support",
             "back_button": "Back",
-            "ticket_start_text": "I'm here to help you register for MTL FEST 2024. Press Start to begin.",
+            "ticket_start_text": "I'm here to help you register for Monteliber.Zaedno Fest 2025. Press Start to begin.",
             "start_button": "Start",
-            "ticket_country_text": "We'd love to know a bit more about you to improve our future events. "
-                                   "In which country are you currently residing?",
+            "ticket_country_text": "We'd love to know where you're based right now to plan better. Which country are you currently in?",
             "ticket_source_text": "How did you hear about the festival?",
-            "ticket_dates_text": "Please select the days you'd like to attend the festival events. "
-                                 "This helps us plan according to venue capacity.",
-            "date_4_10": "October 4th - Cinema",
-            "date_5_10": "October 5th - Lectures",
-            "date_6_10": "October 6th - City Tour",
+            "ticket_dates_text": "Pick the days you plan to attend so we can manage venue capacity.",
+            "date_27_11": "27 November — Opening & workshops",
+            "date_28_11": "28 November — Lectures & afterparty",
             "continue_button": "Continue",
-            "TicketUUID": user_data.get("TicketUUID", None),
+            "TicketUUID": ticket_uuid,
+            "TicketKey": ticket_key,
             "is_admin": user_id in config.admins
         }
     logger.info("Exiting: get_start_data")
@@ -167,20 +201,25 @@ async def on_button_clicked(c: CallbackQuery, button: Button, manager: DialogMan
     if button.widget_id == "ticket_start":
         user_id = c.from_user.id
         user_data = await get_user_data(user_id)
-        if user_data and user_data.get("TicketUUID", None):
+        season = config.CURRENT_TICKET_SEASON
+        ticket_info = _get_ticket_info(user_data or {}, season)
+        ticket_uuid = ticket_info.get("uuid")
+        if ticket_uuid:
             await manager.switch_to(MainStates.ticket_confirmation)
             logger.info("Exiting: on_button_clicked (user has ticket)")
             return
         else:
             async with config.lock:
-                data = {"TicketDate": datetime.utcnow(),
-                        "TicketUUID": uuid.uuid4().hex,
-                        "TicketKey": await get_last_key()
-                        }
-                await update_user_data(user_id, data)
-            file_path = os.path.join(DATA_DIR, f'{data["TicketUUID"]}.png')
-            logger.info(f"Creating QR code at: {file_path}")
-            create_beautiful_code(file_path, data["TicketUUID"], "MTLFEST" + data["TicketKey"])
+                ticket_uuid = uuid.uuid4().hex
+                ticket_key = await get_last_key()
+                created_at = datetime.utcnow()
+                await update_user_data(user_id, {
+                    f"tickets.{season}.uuid": ticket_uuid,
+                    f"tickets.{season}.key": ticket_key,
+                    f"tickets.{season}.created_at": created_at,
+                })
+            logger.info("Generated ticket %s for user %s", ticket_uuid, user_id)
+            _ensure_ticket_qr(ticket_uuid, ticket_key)
             await manager.switch_to(MainStates.ticket_confirmation)
             logger.info("Exiting: on_button_clicked (new ticket created)")
             return
@@ -240,7 +279,8 @@ window_ticket_start = Window(
 async def mh_process_country(message: Message, widget: MessageInput, dialog_manager: DialogManager) -> None:
     logger.info("Entering: mh_process_country")
     user_id = message.from_user.id
-    await update_user_data(user_id, {"Country": message.text})
+    season = config.CURRENT_TICKET_SEASON
+    await update_user_data(user_id, {f"tickets.{season}.questionnaire.country": message.text})
     await dialog_manager.switch_to(MainStates.ticket_source)
     logger.info("Exiting: mh_process_country")
 
@@ -259,7 +299,8 @@ window_ticket_country = Window(
 async def mh_process_source(message: Message, widget: MessageInput, dialog_manager: DialogManager) -> None:
     logger.info("Entering: mh_process_source")
     user_id = message.from_user.id
-    await update_user_data(user_id, {"Source": message.text})
+    season = config.CURRENT_TICKET_SEASON
+    await update_user_data(user_id, {f"tickets.{season}.questionnaire.source": message.text})
     await dialog_manager.switch_to(MainStates.ticket_dates)
     logger.info("Exiting: mh_process_source")
 
@@ -291,7 +332,9 @@ async def mh_process_qr(message: Message, widget: MessageInput, dialog_manager: 
             user_data = await get_user_data(0, qr_data)
             if user_data:
                 user_id = user_data.get("UserID")
-                await update_user_data(user_id, {"LastEnterDate": datetime.utcnow()})
+                season = _find_ticket_season(user_data, qr_data)
+                if season:
+                    await update_user_data(user_id, {f"tickets.{season}.last_scanned_at": datetime.utcnow()})
                 await message.reply(f'Успешно ! Можете присылать новый код ! или выйти в главное меню /start ')
                 await add_scan_log(admin_id=admin_id, user_id=user_id)
 
@@ -323,17 +366,13 @@ async def on_date_selected(c: CallbackQuery, checkbox: ManagedCheckbox, manager:
 async def on_dates_confirmed(c: CallbackQuery, button: Button, manager: DialogManager):
     logger.info("Entering: on_dates_confirmed")
     user_id = c.from_user.id
+    season = config.CURRENT_TICKET_SEASON
     async with config.lock:
-        data = {"date_4_10": manager.dialog_data.get("date_4_10", False),
-                "date_5_10": manager.dialog_data.get("date_5_10", False),
-                "date_6_10": manager.dialog_data.get("date_6_10", False),
-                #        "TicketDate": datetime.utcnow(),
-                #        "TicketUUID": uuid.uuid4().hex,
-                #        "TicketKey": await get_last_key()
-                }
+        data = {
+            f"tickets.{season}.dates.date_27_11": manager.dialog_data.get("date_27_11", False),
+            f"tickets.{season}.dates.date_28_11": manager.dialog_data.get("date_28_11", False),
+        }
         await update_user_data(user_id, data)
-
-    # create_beautiful_code(f'./data/{data["TicketUUID"]}.png', data["TicketUUID"], "MTLFEST" + data["TicketKey"])
 
     await manager.switch_to(MainStates.ticket_confirmation)
     logger.info("Exiting: on_dates_confirmed")
@@ -343,21 +382,15 @@ window_ticket_dates = Window(
     Format("{ticket_dates_text}"),
     Group(
         Checkbox(
-            checked_text=Format("[✅] {date_4_10}"),
-            unchecked_text=Format("[  ] {date_4_10}"),
-            id="date_4_10",
+            checked_text=Format("[✅] {date_27_11}"),
+            unchecked_text=Format("[  ] {date_27_11}"),
+            id="date_27_11",
             on_state_changed=on_date_selected
         ),
         Checkbox(
-            checked_text=Format("[✅] {date_5_10}"),
-            unchecked_text=Format("[  ] {date_5_10}"),
-            id="date_5_10",
-            on_state_changed=on_date_selected
-        ),
-        Checkbox(
-            checked_text=Format("[✅] {date_6_10}"),
-            unchecked_text=Format("[  ] {date_6_10}"),
-            id="date_6_10",
+            checked_text=Format("[✅] {date_28_11}"),
+            unchecked_text=Format("[  ] {date_28_11}"),
+            id="date_28_11",
             on_state_changed=on_date_selected
         ),
     ),
@@ -372,7 +405,8 @@ window_ticket_image = Window(
     # ),
     StaticMedia(
         path=Format(os.path.join(DATA_DIR, '{TicketUUID}.png')),
-        type=ContentType.PHOTO
+        type=ContentType.PHOTO,
+        when="TicketUUID"
     ),
     Format("{show_ticket_text}"),
     Button(Format("{back_button}"), id="start", on_click=on_button_clicked),

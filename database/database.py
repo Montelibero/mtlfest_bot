@@ -12,7 +12,7 @@ users
             "StartDate": datetime,     # first /start usage
             "utm": str,                # optional marketing tag
             "tickets": {
-                "2024": {
+                "2025": {
                     "uuid": str,                 # hex ticket identifier
                     "key": str,                  # zero-padded numeric code
                     "created_at": datetime,      # ticket creation timestamp
@@ -22,12 +22,10 @@ users
                         "source": str,
                     },
                     "dates": {
-                        "date_4_10": bool,
-                        "date_5_10": bool,
-                        "date_6_10": bool,
+                        "<event_date_id>": bool,
                     }
                 },
-                "2025": { ... }
+                "<season_id>": { ... }
             }
         }
 
@@ -77,7 +75,8 @@ _DATE_FIELDS = ("date_4_10", "date_5_10", "date_6_10")
 async def get_user_data(user_id, ticket_key=None):
     logger.info(f"Entering: get_user_data(user_id={user_id}, ticket_key={ticket_key})")
     if ticket_key:
-        result = await users_collection.find_one({"TicketUUID": ticket_key})
+        season = config.CURRENT_TICKET_SEASON
+        result = await users_collection.find_one({f"tickets.{season}.uuid": ticket_key})
     else:
         result = await users_collection.find_one({"UserID": user_id})
     logger.info(f"Exiting: get_user_data")
@@ -96,7 +95,9 @@ async def update_user_data(user_id, data):
 
 async def get_last_key() -> str:
     logger.info(f"Entering: get_last_key")
-    last_key = await config_collection.find_one({"Key": "LastTicketKey"})
+    season = config.CURRENT_TICKET_SEASON
+    key_name = f"LastTicketKey_{season}"
+    last_key = await config_collection.find_one({"Key": key_name})
     if last_key is None:
         start_key = 11
     else:
@@ -104,11 +105,11 @@ async def get_last_key() -> str:
 
     while True:
         ticket_key = f"{start_key:03d}"
-        existing_user = await users_collection.find_one({"TicketKey": ticket_key})
+        existing_user = await users_collection.find_one({f"tickets.{season}.key": ticket_key})
         if existing_user is None:
             # Обновляем LastTicketKey перед возвратом
             await config_collection.update_one(
-                {"Key": "LastTicketKey"},
+                {"Key": key_name},
                 {"$set": {"Value": start_key}},
                 upsert=True
             )
@@ -278,18 +279,28 @@ async def export_utm_to_csv():
 
 async def export_tickets_to_csv():
     logger.info(f"Entering: export_tickets_to_csv")
-    tickets = await users_collection.find({"TicketDate": {"$exists": True}}).to_list(length=None)
-
+    season = config.CURRENT_TICKET_SEASON
+    legacy_filter = {f"tickets.{season}": {"$exists": True}}
     data = []
-    for ticket in tickets:
+    async for user in users_collection.find(legacy_filter):
+        user_id = user.get("UserID", "N/A")
+        ticket_info = (user.get("tickets") or {}).get(season)
+        if not ticket_info:
+            continue
+
+        created_at = ticket_info.get("created_at", "N/A")
+        if isinstance(created_at, datetime):
+            created_at = created_at.strftime("%Y-%m-%d %H:%M:%S")
+
         data.append({
-            "date": ticket.get("TicketDate", "N/A").strftime("%Y-%m-%d %H:%M:%S") if isinstance(
-                ticket.get("TicketDate"), datetime) else "N/A",
-            "user_id": ticket.get("UserID", "N/A"),
-            "ticket_key": ticket.get("TicketKey", "N/A")
+            "season": season,
+            "date": created_at,
+            "user_id": user_id,
+            "ticket_key": ticket_info.get("key", "N/A"),
+            "ticket_uuid": ticket_info.get("uuid", "N/A"),
         })
 
-    await save_to_csv('data/output.csv', data, ["date", "user_id", "ticket_key"])
+    await save_to_csv('data/output.csv', data, ["season", "date", "user_id", "ticket_key", "ticket_uuid"])
     logger.info(f"Exiting: export_tickets_to_csv")
     return data
 
