@@ -31,5 +31,8 @@ class Config:
     lock = asyncio.Lock()
     admins = []
 
+    # Ticketing season configuration
+    CURRENT_TICKET_SEASON = "2025"
+
 
 config = Config()
