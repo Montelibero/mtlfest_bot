@@ -102,11 +102,11 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
                            "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n\n",
             "calendar_text": """🎉 Основная программа Monteliber.Zaedno Fest 2025
 \n\n📅 27 ноября — открытие фестиваля
-\n\nПодгорица, Черногорияв отеле Kings Park Hotel (https://maps.app.goo.gl/hKYJWZfxodnRRNcn7?g_st=ipc)
+\n\nПодгорица, Черногорияв отеле <a href="https://maps.app.goo.gl/hKYJWZfxodnRRNcn7?g_st=ipc">Kings Park Hotel</a>
 \n\nФестиваль ждёт вас с 12 часов. 
 \n\n📢 Само открытие фестиваля — в 13:00
 \n\nВстречаемся в отеле, знакомимся и начинаются первые лекции.
-\n\nВечером после лекций — вечеринка в неформальной обстановке в уютном баре Богарт (https://maps.app.goo.gl/6Ns29oPRzqtRVc598?g_st=ipc)
+\n\nВечером после лекций — вечеринка в неформальной обстановке в уютном баре <a href="https://maps.app.goo.gl/6Ns29oPRzqtRVc598?g_st=ipc">Богарт</a>
 \n\n📅 28 ноября – второй день.
 \n\n🎤 Лекции и панельные дискуссии на английском языке
 \n\n🌍 Темы: сообщества, предпринимательство, децентрализация, гражданские инициативы
@@ -117,7 +117,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
 \n\nКоличество мест ограничено.
 \n\n📢 Следите за обновлениями:
 \n\nНовости и анонсы
-\n\nпубликуются в Telegram-канале Montelibero Fest, (https://t.me/monteliberofestival) так же на сайте. (https://mtlfest.me/2025/ru)
+\n\nпубликуются в Telegram-канале <a href="https://t.me/monteliberofestival">Montelibero Fest</a>, так же на <a href="https://mtlfest.me/2025/ru">сайте</a>.
 \n\nЖдём вас! 🤗""",
             "support_text": "По всем вопросам фестиваля можно написать в @mtlfest_support_bot — волонтёры ответят как можно быстрее.",
             "show_ticket_text": "Это твой бесплатный билет на Monteliber.Zaedno Fest 27–28 ноября 2025. Покажи QR на входе с телефона или распечатай его. Если планы изменились — дай знать команде поддержки.",
@@ -156,22 +156,22 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "calendar_text": """🎉 Main programme of Monteliber.Zaedno Fest 2025
 \n\n📅 27 November — Opening Day
 \n\nWelcome session, introductions and first lectures
-\nPodgorica, Montenegro
-\n\n      Gathering from 12 noon
-\n\n📢 The festival itself opens at 1 p.m.
+\nPodgorica, Montenegro at <a href="https://maps.app.goo.gl/hKYJWZfxodnRRNcn7?g_st=ipc">Kings Park Hotel</a>
+\n\nGathering from 12:00
+\n\n📢 The festival itself opens at 13:00
 \n\n✨ Welcome session, introductions and first lectures
 \n\n💬 Informal communication and evening networking
-\n\nIn the evening after the lectures — a party in an informal setting at the cosy Bogart bar
+\n\nIn the evening after the lectures — a party in an informal setting at the cosy <a href="https://maps.app.goo.gl/6Ns29oPRzqtRVc598?g_st=ipc">Bogart bar</a>
 \n\n📅 28 November — Second Festival Day
 \n\n🎤 Lectures and panel discussions in English
 \n\n🌍 Topics: communities, entrepreneurship, decentralisation, civic initiatives
-\n\n🕐 From 12:00 to 21:00
+\n\n🕐 From 12:00 to 19:00
 \n\n🎉 In the evening — Montelibero Fest Afterparty, for those who want to sit down together and discuss what they have learned and what conclusions they have drawn.
 \n\n🎟️ Participation
 \n\nThe festival is free, but advance registration is required.
 \n\nThe number of places is limited.
 \n\n📢 Stay tuned for updates:
-\n\nNews and announcements are published on the Montelibero Fest Telegram channel. """
+\n\nNews and announcements are published on the <a href="https://t.me/monteliberofestival">Montelibero Fest Telegram channel</a> and on the <a href="https://mtlfest.me/2025/en">website</a>. """
                             "out via @mtlfest_support_bot. "
                             "Our volunteers will get back to you as soon as possible.",
             "support_text": "For any questions message @mtlfest_support_bot — volunteers will reply as soon as possible.",
