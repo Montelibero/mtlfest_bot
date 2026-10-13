@@ -10,17 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Install deps
-        run: uv pip install --system -r requirements.txt ruff pyright pytest pytest-asyncio
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@v5
+      - name: Create venv and install deps
+        run: |
+          uv venv .venv --python 3.14
+          uv pip install --python .venv/bin/python -r requirements.txt ruff pyright pytest pytest-asyncio
       - name: ruff check
-        run: ruff check .
+        run: .venv/bin/ruff check .
       - name: ruff format check
-        run: ruff format --check .
+        run: .venv/bin/ruff format --check .
       - name: pyright
-        run: pyright --level error
+        run: .venv/bin/pyright --level error
 
   test:
     runs-on: ubuntu-latest
@@ -32,12 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-        with:
-          python-version: "3.12"
-      - name: Install deps
-        run: uv pip install --system -r requirements.txt pytest pytest-asyncio
+      - name: Create venv and install deps
+        run: |
+          uv venv .venv --python 3.14
+          uv pip install --python .venv/bin/python -r requirements.txt pytest pytest-asyncio
       - name: Run tests
-        run: pytest -q
+        run: .venv/bin/python -m pytest -q
 
   docker:
     runs-on: ubuntu-latest
