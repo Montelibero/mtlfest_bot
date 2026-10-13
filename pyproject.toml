@@ -1,0 +1,32 @@
+[project]
+name = "mtlfest-bot"
+version = "2025.1"
+description = "Telegram registration bot for Monteliber.Zaedno Fest"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = [".venv", "data"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear (common bug patterns)
+    "UP",  # pyupgrade
+    "ASYNC",  # async pitfalls
+]
+ignore = [
+    "E501",  # line too long - text templates for Telegram are naturally long
+]
+
+[tool.pyright]
+include = ["main.py", "routers", "database", "config", "tests"]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"
+reportMissingImports = true

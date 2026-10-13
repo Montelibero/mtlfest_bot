@@ -1,0 +1,14 @@
+# Direct dependencies of the bot. Compiled into requirements.txt via:
+#   uv pip compile requirements.in --python-version 3.14 -o requirements.txt
+aiogram~=3.31
+aiogram-dialog~=2.6
+aiofiles
+loguru
+motor~=3.7
+opencv-python-headless
+pillow
+pyzbar
+qrcode
+redis
+sentry-sdk
+python-dotenv

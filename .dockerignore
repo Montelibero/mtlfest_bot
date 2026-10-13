@@ -1,10 +1,21 @@
+# Git
 .git
-.idea
-.venv
+.gitignore
+
+# Python
 __pycache__
 *.pyc
-*.pyo
-*.pyd
-.DS_Store
+.venv
+.pytest_cache
+.ruff_cache
+
+# Env & secrets - never bake into image
 .env
-mtlfest_bot.log
+
+# Generated assets and logs
+data/
+*.log
+
+# Tooling
+.letta/
+requirements.in

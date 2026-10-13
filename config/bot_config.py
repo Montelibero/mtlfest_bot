@@ -8,7 +8,7 @@ load_dotenv()
 
 
 class Config:
-    if os.getenv('ENVIRONMENT', 'test') == 'production':
+    if os.getenv("ENVIRONMENT", "test") == "production":
         TEST_MODE: bool = False
         BOT_TOKEN = os.getenv("BOT_TOKEN")
     else:
@@ -16,7 +16,9 @@ class Config:
         BOT_TOKEN = os.getenv("TEST_BOT_TOKEN")
 
     if not BOT_TOKEN:
-        raise ValueError("Не задан токен бота. Убедитесь, что в файле .env есть переменная BOT_TOKEN или TEST_BOT_TOKEN.")
+        raise ValueError(
+            "Не задан токен бота. Убедитесь, что в файле .env есть переменная BOT_TOKEN или TEST_BOT_TOKEN."
+        )
 
     MONGO_URI = os.getenv("MONGO_URI")
     if not MONGO_URI:
@@ -27,9 +29,9 @@ class Config:
     # Другие настройки
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/1")
 
-    bot: Bot = None
+    bot: Bot | None = None
     lock = asyncio.Lock()
-    admins = []
+    admins: list[int] = []
 
     # Ticketing season configuration
     CURRENT_TICKET_SEASON = "2025"

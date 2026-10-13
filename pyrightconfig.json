@@ -1,0 +1,10 @@
+{
+  "include": ["main.py", "routers", "database", "config", "tests"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/.venv", "data"],
+  "pythonVersion": "3.12",
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "basic",
+  "reportMissingModuleSource": false,
+  "useLibraryCodeForTypes": true
+}

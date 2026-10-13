@@ -1,17 +1,15 @@
-# Use the official Python image
-FROM python:3.12-slim
+# syntax=docker/dockerfile:1
+FROM python:3.14-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y curl libgl1-mesa-glx libzbar0 && \
+# Runtime system deps:
+#   libzbar0t64 - native zbar library for pyzbar (QR decode fallback)
+RUN apt-get update && apt-get install -y --no-install-recommends curl libzbar0t64 && \
     rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file
+# Install dependencies first for better layer caching
 COPY requirements.txt .
-
-# Install uv and dependencies in one step
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     export PATH="/root/.local/bin:${PATH}" && \
     uv pip install --system --no-cache -r requirements.txt
@@ -19,11 +17,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 # Copy the rest of the application code
 COPY . .
 
-# Set the python path
-ENV PYTHONPATH=.
-
-# Set the PATH for the CMD instruction
+ENV PYTHONPATH=/app
 ENV PATH="/root/.local/bin:${PATH}"
 
-# Command to run the application
 CMD ["uv", "run", "main.py"]

@@ -1,25 +1,25 @@
+import asyncio
 import os
 from datetime import datetime
 
-import asyncio
-from aiogram import Router, F
-from aiogram.filters import CommandStart, Command, CommandObject
+from aiogram import F, Router
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, FSInputFile
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import FSInputFile, Message
 from aiogram_dialog import DialogManager, StartMode
 from loguru import logger
 
 from config.bot_config import config
 from database.database import (
-    update_user_data,
-    get_user_data,
-    delete_user_data,
-    add_log,
-    export_utm_to_csv,
-    export_tickets_to_csv,
-    get_user_ids,
     add_admin_id,
+    add_log,
+    delete_user_data,
+    export_tickets_to_csv,
+    export_utm_to_csv,
+    get_user_data,
+    get_user_ids,
+    update_user_data,
 )
 from routers import main_dialog
 
@@ -34,6 +34,7 @@ async def command_start_handler(
     command: CommandObject,
 ) -> None:
     logger.info("Entering: command_start_handler")
+    assert message.from_user is not None
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
 
@@ -45,7 +46,7 @@ async def command_start_handler(
     if start_args:
         params = start_args.split()
         for param in params:
-            if param.startswith('utm_'):
+            if param.startswith("utm_"):
                 utm_data = param
 
     # Update user data
@@ -79,7 +80,7 @@ async def cmd_change_lang(
 ):
     logger.info("Entering: cmd_change_lang")
     data = await state.get_data()
-    lang = 'en' if data.get('lang') == 'ru' else 'ru'
+    lang = "en" if data.get("lang") == "ru" else "ru"
     await message.answer(f"Язык изменен на {lang}")
     await state.update_data(lang=lang)
     await dialog_manager.start(main_dialog.MainStates.start, mode=StartMode.RESET_STACK)
@@ -93,6 +94,7 @@ async def cmd_delete_data(
     dialog_manager: DialogManager,
 ):
     logger.info("Entering: cmd_delete_data")
+    assert message.from_user is not None
     user_id = message.from_user.id
     await delete_user_data(user_id)
     await message.answer(
@@ -106,8 +108,8 @@ async def cmd_delete_data(
 async def cmd_export_utm(message: Message, state: FSMContext):
     logger.info("Entering: cmd_export_utm")
     await export_utm_to_csv()
-    filename = 'data/output.csv'
-    if os.path.isfile(filename):
+    filename = "data/output.csv"
+    if await asyncio.to_thread(os.path.isfile, filename):
         await message.reply_document(FSInputFile(filename))
     logger.info("Exiting: cmd_export_utm")
 
@@ -116,8 +118,8 @@ async def cmd_export_utm(message: Message, state: FSMContext):
 async def cmd_export_tickets(message: Message, state: FSMContext):
     logger.info("Entering: cmd_export_tickets")
     await export_tickets_to_csv()
-    filename = 'data/output.csv'
-    if os.path.isfile(filename):
+    filename = "data/output.csv"
+    if await asyncio.to_thread(os.path.isfile, filename):
         await message.reply_document(FSInputFile(filename))
     logger.info("Exiting: cmd_export_tickets")
 
@@ -131,7 +133,7 @@ class ExitState(StatesGroup):
 async def cmd_exit(message: Message, state: FSMContext):
     logger.info("Entering: cmd_exit")
     my_state = await state.get_state()
-    if message.from_user.username == "itolstov":
+    if message.from_user and message.from_user.username == "itolstov":
         if my_state == ExitState.need_exit:
             await state.set_state(None)
             await message.reply("Chao :[[[")
@@ -146,6 +148,8 @@ async def cmd_exit(message: Message, state: FSMContext):
 async def cmd_send(message: Message, state: FSMContext):
     logger.info("Entering: cmd_send")
     # Split the message text into command and arguments
+    if message.text is None:
+        return
     command_parts = message.text.split(maxsplit=1)
     if len(command_parts) < 2:
         await message.reply("Error: No argument provided.")
@@ -187,6 +191,8 @@ async def cmd_send(message: Message, state: FSMContext):
 @router.message(Command("add"), F.chat.id.in_((-1002167206567, 84131737)))
 async def cmd_add(message: Message, state: FSMContext):
     logger.info("Entering: cmd_add")
+    if message.text is None:
+        return
     # Split the message text into command and arguments
     command_parts = message.text.split(maxsplit=1)
     admin_id = int(command_parts[1])
