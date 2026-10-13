@@ -34,6 +34,8 @@ jobs:
           - 27017:27017
     steps:
       - uses: actions/checkout@v4
+      - name: Install system deps (zbar for pyzbar)
+        run: sudo apt-get update && sudo apt-get install -y libzbar0
       - uses: astral-sh/setup-uv@v5
       - name: Create venv and install deps
         run: |

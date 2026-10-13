@@ -1,11 +1,19 @@
-"""Unit tests for pure helpers in routers/main_dialog.py (no Telegram, no Mongo)."""
+"""Unit tests for pure helpers in routers/main_dialog.py (no Telegram, no Mongo).
 
+config.bot_config requires a bot token at import time (raises without one), so
+tests stub minimal env vars before importing project modules.
+"""
+
+import os
 import sys
 from pathlib import Path
 
+os.environ.setdefault("TEST_BOT_TOKEN", "ci-stub-token")
+os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017")
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from routers.main_dialog import _find_ticket_season, _get_ticket_info
+from routers.main_dialog import _find_ticket_season, _get_ticket_info  # noqa: E402
 
 
 class TestGetTicketInfo:

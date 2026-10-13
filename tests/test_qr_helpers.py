@@ -2,23 +2,41 @@
 
 These exercise the exact pipeline used in production: create_beautiful_code
 writes a PNG with logo text, decode_qr_code reads it back (cv2 first, pyzbar
-fallback).
+fallback). The zbar shared library is required for the pyzbar fallback; tests
+skip cleanly when it is absent.
 """
 
+import ctypes.util
+import importlib.util
+import os
 import sys
 from pathlib import Path
 
-import pytest
+os.environ.setdefault("TEST_BOT_TOKEN", "ci-stub-token")
+os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017")
+
+import pytest  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from database.qr_helpers import (
+
+def _zbar_available() -> bool:
+    if importlib.util.find_spec("pyzbar") is None:
+        return False
+    return bool(ctypes.util.find_library("zbar"))
+
+
+_HAS_ZBAR = _zbar_available()
+
+from database.qr_helpers import (  # noqa: E402
     create_beautiful_code,
     decode_color,
     decode_qr_code,
     decode_qr_code_cv,
     decode_qr_code_pyzbar,
 )
+
+pytestmark = pytest.mark.skipif(not _HAS_ZBAR, reason="zbar shared library not available")
 
 
 class TestDecodeColor:
