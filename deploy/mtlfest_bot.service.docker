@@ -1,0 +1,26 @@
+[Unit]
+Description=mtlfest_bot Application (Docker, GHCR image)
+After=network.target
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=attid
+Group=attid
+Type=simple
+WorkingDirectory=/home/mtlfest_bot
+Environment=ENVIRONMENT=production
+# .env lives next to the checkout; docker compose-like env file is passed via --env-file
+ExecStart=/usr/bin/docker run --rm \
+    --name mtlfest_bot \
+    --env-file /home/mtlfest_bot/.env \
+    -v /home/mtlfest_bot/data:/app/data \
+    -v /home/mtlfest_bot/.env:/app/.env:ro \
+    ghcr.io/montelibero/mtlfest_bot:latest
+ExecStop=/usr/bin/docker stop mtlfest_bot
+Restart=always
+RestartSec=15
+TimeoutSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -1,24 +1,24 @@
 #!/bin/bash
+# Update mtlfest_bot from prebuilt GHCR image and restart the service.
+# Assumes `docker login ghcr.io` was done once on this machine.
+set -e
 
 SERVICE_FILE="mtlfest_bot.service"
+IMAGE="ghcr.io/montelibero/mtlfest_bot:latest"
 
-# Копирование нового файла службы
-echo "Копирование нового файла службы..."
-sudo cp $SERVICE_FILE /etc/systemd/system/
+echo "Pulling fresh image: $IMAGE"
+sudo docker pull "$IMAGE"
 
-# Перезагрузка демона systemd
-echo "Перезагрузка демона systemd..."
-sudo systemctl daemon-reload
+# Copy new service file if the unit definition changed
+if ! sudo cmp -s "$SERVICE_FILE" /etc/systemd/system/mtlfest_bot.service; then
+    echo "Service file changed - copying..."
+    sudo cp "$SERVICE_FILE" /etc/systemd/system/
+    sudo systemctl daemon-reload
+fi
 
-# Перезапуск службы
-echo "Перезапуск службы..."
-sudo systemctl stop $SERVICE_FILE
-sudo systemctl start $SERVICE_FILE
+echo "Restarting service..."
+sudo systemctl stop "$SERVICE_FILE"
+sudo systemctl start "$SERVICE_FILE"
 
-# Включение службы для автоматического старта
-echo "Включение службы для автоматического старта..."
-sudo systemctl enable $SERVICE_FILE
-
-# Проверка статуса службы
-echo "Проверка статуса службы..."
-sudo systemctl status $SERVICE_FILE
+echo "Service status:"
+sudo systemctl status "$SERVICE_FILE" --no-pager
