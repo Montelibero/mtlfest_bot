@@ -71,6 +71,8 @@ jobs:
           context: .
           load: true
           tags: mtlfest_bot:ci
+          build-args: |
+            GIT_SHA=${{ github.sha }}
       - name: Smoke import in container
         run: |
           docker run --rm --entrypoint python mtlfest_bot:ci -c "
@@ -78,6 +80,8 @@ jobs:
           import aiogram, aiogram_dialog, motor, cv2, pyzbar.pyzbar, qrcode
           print('container OK, python', sys.version.split()[0])
           "
+      - name: Version baked into image
+        run: docker run --rm --entrypoint sh mtlfest_bot:ci -c 'echo GIT_SHA=$GIT_SHA'
       - name: Push to GHCR (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
@@ -87,3 +91,5 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import suppress
 
 import sentry_sdk
@@ -64,6 +65,7 @@ async def on_startup(bot: Bot, dispatcher: Dispatcher):
 
 
 async def main():
+    logger.info("Starting mtlfest_bot version={}", os.environ.get("GIT_SHA", "dev"))
     storage = RedisStorage.from_url(
         url=config.REDIS_URL, key_builder=DefaultKeyBuilder(with_bot_id=True, with_destiny=True)
     )

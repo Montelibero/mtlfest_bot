@@ -8,7 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl libzbar0t6
 
 WORKDIR /app
 
-# Install dependencies first for better layer caching
+# Version metadata, baked at build time (CI passes GIT_SHA; local builds get "dev")
+ARG GIT_SHA=dev
+ENV GIT_SHA=${GIT_SHA}
+
+# Install dependencies into the system interpreter (no venv games at runtime)
 COPY requirements.txt .
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     export PATH="/root/.local/bin:${PATH}" && \
@@ -18,6 +22,5 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 COPY . .
 
 ENV PYTHONPATH=/app
-ENV PATH="/root/.local/bin:${PATH}"
 
-CMD ["uv", "run", "main.py"]
+CMD ["python", "main.py"]

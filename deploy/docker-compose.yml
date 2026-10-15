@@ -1,0 +1,36 @@
+# Stack for mtlfest_bot: prebuilt GHCR image + local Redis for FSM storage.
+# Variables are inline (list format, NAME=value) - fill real values before deploy.
+# No .env files.
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: always
+    # FSM storage only; no persistence needed - no volume at all,
+    # container fs is enough, data dies with the container and that is fine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  bot:
+    image: ghcr.io/montelibero/mtlfest_bot:latest
+    restart: always
+    environment:
+      # === Bot ===
+      - BOT_TOKEN=changeme
+      - ENVIRONMENT=production
+
+      # === Database ===
+      - MONGO_URI=changeme
+      # FSM storage (internal docker network)
+      - REDIS_URL=redis://redis:6379/1
+
+      # === Optional ===
+      - SENTRY_DSN=
+
+    depends_on:
+      - redis
+    volumes:
+      - bot_data:/app/data
+
+volumes:
+  bot_data:
+
