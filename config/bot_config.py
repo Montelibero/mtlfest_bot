@@ -34,7 +34,7 @@ class Config:
     admins: list[int] = []
 
     # Ticketing season configuration
-    CURRENT_TICKET_SEASON = "2025"
+    CURRENT_TICKET_SEASON = "2026"
 
 
 config = Config()

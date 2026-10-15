@@ -65,26 +65,37 @@ class TestKeyIssuance:
         assert key == "011"
 
     async def test_occupied_keys_are_skipped(self, test_db):
+        season = test_db.config.CURRENT_TICKET_SEASON
         first = await test_db.get_last_key()
         assert first == "011"
         # Caller registers the ticket under this key (production flow).
         await test_db.users_collection.insert_one(
-            {"UserID": 1, "tickets": {"2025": {"key": first, "uuid": "x"}}}
+            {"UserID": 1, "tickets": {season: {"key": first, "uuid": "x"}}}
         )
         second = await test_db.get_last_key()
         assert second == "012"
 
     async def test_gap_in_keys_is_skipped(self, test_db):
         # 011 taken by a user, but counter says 10 -> must skip to 012.
+        season = test_db.config.CURRENT_TICKET_SEASON
         await test_db.users_collection.insert_one(
-            {"UserID": 1, "tickets": {"2025": {"key": "011", "uuid": "x"}}}
+            {"UserID": 1, "tickets": {season: {"key": "011", "uuid": "x"}}}
         )
         key = await test_db.get_last_key()
         assert key == "012"
 
+    async def test_old_season_keys_do_not_block(self, test_db):
+        """A 2025 ticket holding key 011 must NOT block 2026 issuance."""
+        await test_db.users_collection.insert_one(
+            {"UserID": 1, "tickets": {"2025": {"key": "011", "uuid": "old"}}}
+        )
+        key = await test_db.get_last_key()
+        assert key == "011"
+
     async def test_counter_persists(self, test_db):
+        season = test_db.config.CURRENT_TICKET_SEASON
         await test_db.get_last_key()
-        doc = await test_db.config_collection.find_one({"Key": "LastTicketKey_2025"})
+        doc = await test_db.config_collection.find_one({"Key": f"LastTicketKey_{season}"})
         assert doc["Value"] == 11
 
 
@@ -96,14 +107,28 @@ class TestUserData:
         assert user["Lang"] == "ru"
 
     async def test_nested_ticket_update(self, test_db):
-        await test_db.update_user_data(42, {"tickets.2025.uuid": "abc"})
+        season = test_db.config.CURRENT_TICKET_SEASON
+        await test_db.update_user_data(42, {f"tickets.{season}.uuid": "abc"})
         user = await test_db.get_user_data(42)
-        assert user["tickets"]["2025"]["uuid"] == "abc"
+        assert user["tickets"][season]["uuid"] == "abc"
 
-    async def test_find_by_ticket_uuid(self, test_db):
-        await test_db.update_user_data(42, {"tickets.2025.uuid": "abc"})
-        user = await test_db.get_user_data(None, "abc")
-        assert user["UserID"] == 42
+    async def test_find_by_ticket_uuid_current_season_only(self, test_db):
+        # get_user_data(ticket_key=...) resolves only the CURRENT season.
+        season = test_db.config.CURRENT_TICKET_SEASON
+        await test_db.update_user_data(42, {"tickets.2025.uuid": "old-uuid"})
+        await test_db.update_user_data(42, {f"tickets.{season}.uuid": "new-uuid"})
+        user = await test_db.get_user_data(None, "new-uuid")
+        assert user is not None and user["UserID"] == 42
+        old = await test_db.get_user_data(None, "old-uuid")
+        assert old is None
+
+    async def test_season_archive_flag(self, test_db):
+        """Archive flow: flag is set, current season unaffected."""
+        season = test_db.config.CURRENT_TICKET_SEASON
+        await test_db.update_user_data(42, {"tickets.2025.uuid": "old", "tickets.2025.archived": True})
+        user = await test_db.get_user_data(42)
+        assert user["tickets"]["2025"]["archived"] is True
+        assert season not in user["tickets"]
 
     async def test_delete(self, test_db):
         await test_db.update_user_data(42, {"Lang": "ru"})

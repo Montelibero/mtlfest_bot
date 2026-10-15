@@ -42,6 +42,16 @@ def _find_ticket_season(user_data: dict[str, Any], ticket_uuid: str) -> str | No
     return None
 
 
+def _find_ticket_season_any(user_data: dict[str, Any], ticket_uuid: str) -> str | None:
+    """Search every season; used by the scanner to politely reject old tickets."""
+    tickets = user_data.get("tickets") if user_data else None
+    if isinstance(tickets, dict):
+        for season, info in tickets.items():
+            if isinstance(info, dict) and info.get("uuid") == ticket_uuid:
+                return season
+    return None
+
+
 def _ensure_ticket_qr(ticket_uuid: str | None, ticket_key: str | None) -> str | None:
     if not ticket_uuid or not ticket_key:
         return None
@@ -82,8 +92,9 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
     if current_state == MainStates.ticket_dates:
         dialog_manager.dialog_data.update(
             {
-                "date_27_11": dates_selected.get("date_27_11", False),
-                "date_28_11": dates_selected.get("date_28_11", False),
+                "date_23_10": dates_selected.get("date_23_10", False),
+                "date_24_10": dates_selected.get("date_24_10", False),
+                "date_25_10": dates_selected.get("date_25_10", False),
             }
         )
 
@@ -103,39 +114,36 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "<code>TBRsYzKKNxM6jjyD3d1Adva2TbgkiAMLux</code>\n"
             "<b>Monero</b>\n"
             "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n\n",
-            "calendar_text": """🎉 Основная программа Monteliber.Zaedno Fest 2025
-\n\n📅 27 ноября — открытие фестиваля
-\n\nПодгорица, Черногория в отеле <a href="https://maps.app.goo.gl/hKYJWZfxodnRRNcn7?g_st=ipc">Kings Park Hotel</a>
-\nФестиваль ждёт вас с 12 часов.
-\n📢 Само открытие фестиваля — в 13:00
-\nВстречаемся в отеле, знакомимся и начинаются первые лекции.
-\nВечером после лекций — вечеринка в неформальной обстановке в уютном баре <a href="https://maps.app.goo.gl/6Ns29oPRzqtRVc598?g_st=ipc">Богарт</a>
-\n\n📅 28 ноября – второй день.
-\n\n🎤 Лекции и панельные дискуссии на английском языке
-\n🌍 Темы: сообщества, предпринимательство, децентрализация, гражданские инициативы
-\n🕐 С 12:00 до 19:00
-\n🎉 Вечером — Afterparty Montelibero Fest, для тех, кто захочет вместе посидеть за одним столом и обсудить, что итнтересного узнали и какие выводы сделали.
-\n\n🎟️ Участие
+            "calendar_text": """🎉 Программа Monteliber Fest 2026
+\n\n📅 23 октября — четверг
+\n\n🥂 С 19:00 — Horoso bar & Fist club — Montelibero
+\n\n📅 24 октября — пятница
+\n\n☕ 10:00–12:00 — MTL завтрак (локация уточняется)
+\n\n🎤 12:00–20:00 — Cube Hotel: лекции и панельные дискуссии
+\n\n🍻 С 21:00 — 501 Darts bar — вечеринка
+\n\n📅 25 октября — суббота
+\n\n🎉 С 16:00 — MTL City — afterparty
+\n\n\n🎟️ Участие
 \n\nФестиваль бесплатный, по предварительной регистрации.
 \nКоличество мест ограничено.
-\n📢 Следите за обновлениями:
-\nНовости и анонсы
-\nпубликуются в Telegram-канале <a href="https://t.me/monteliberofestival">Montelibero Fest</a>, так же на <a href="https://mtlfest.me/2025/ru">сайте</a>.
+\n\n📢 Следите за обновлениями:
+\nНовости и анонсы публикуются в Telegram-канале <a href="https://t.me/monteliberofestival">Montelibero Fest</a>, так же на <a href="https://mtlfest.me/2026/ru">сайте</a>.
 \nЖдём вас! 🤗""",
             "support_text": "По всем вопросам фестиваля можно написать в @mtlfest_support_bot — волонтёры ответят как можно быстрее.",
-            "show_ticket_text": "Это твой бесплатный билет на Monteliber.Zaedno Fest 27–28 ноября 2025. Покажи QR на входе с телефона или распечатай его. Если планы изменились — дай знать команде поддержки.",
+            "show_ticket_text": "Это твой бесплатный билет на Monteliber Fest, 23–25 октября 2026. Покажи QR на входе с телефона или распечатай его. Если планы изменились — дай знать команде поддержки.",
             "donate_button": "Донатить",
             "ticket_button": "Мой билет",
             "calendar_button": "Расписание",
             "support_button": "Поддержка",
             "back_button": "Назад",
-            "ticket_start_text": "Я помогу зарегистрироваться на Monteliber.Zaedno Fest 2025. Нажми Start, чтобы начать.",
+            "ticket_start_text": "Я помогу зарегистрироваться на Monteliber Fest 2026. Нажми Start, чтобы начать.",
             "start_button": "Start",
             "ticket_country_text": "Нам нужно немного информации, чтобы подготовить площадку. В какой стране ты сейчас живёшь?",
             "ticket_source_text": "Расскажи, откуда узнал о фестивале?",
             "ticket_dates_text": "Выбери дни, когда планируешь прийти. Это поможет нам рассчитать нагрузку на площадку.",
-            "date_27_11": "27 ноября — открытие и воркшопы",
-            "date_28_11": "28 ноября — лекции и afterparty",
+            "date_23_10": "23 октября — Montelibero в Horoso bar & Fist club",
+            "date_24_10": "24 октября — завтрак, лекции в Cube Hotel, вечеринка в 501 Darts",
+            "date_25_10": "25 октября — MTL City afterparty",
             "continue_button": "Продолжить",
             "TicketUUID": ticket_uuid,
             "TicketKey": ticket_key,
@@ -156,41 +164,36 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "<code>TBRsYzKKNxM6jjyD3d1Adva2TbgkiAMLux</code>\n"
             "<b>Monero</b>\n"
             "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n",
-            "calendar_text": """🎉 Main programme of Monteliber.Zaedno Fest 2025
-\n\n📅 27 November — Opening Day
-\n\nWelcome session, introductions and first lectures
-\nPodgorica, Montenegro at <a href="https://maps.app.goo.gl/hKYJWZfxodnRRNcn7?g_st=ipc">Kings Park Hotel</a>
-\nGathering from 12:00
-\n📢 The festival itself opens at 13:00
-\n✨ Welcome session, introductions and first lectures
-\n💬 Informal communication and evening networking
-\nIn the evening after the lectures — a party in an informal setting at the cosy <a href="https://maps.app.goo.gl/6Ns29oPRzqtRVc598?g_st=ipc">Bogart bar</a>
-\n\n📅 28 November — Second Festival Day
-\n\n🎤 Lectures and panel discussions in English
-\n🌍 Topics: communities, entrepreneurship, decentralisation, civic initiatives
-\n🕐 From 12:00 to 19:00
-\n🎉 In the evening — Montelibero Fest Afterparty, for those who want to sit down together and discuss what they have learned and what conclusions they have drawn.
-\n\n🎟️ Participation
+            "calendar_text": """🎉 Monteliber Fest 2026 programme
+\n\n📅 23 October — Thursday
+\n\n🥂 From 19:00 — Horoso bar & Fist club — Montelibero
+\n\n📅 24 October — Friday
+\n\n☕ 10:00–12:00 — MTL breakfast (venue TBA)
+\n\n🎤 12:00–20:00 — Cube Hotel: lectures and panel discussions
+\n\n🍻 From 21:00 — 501 Darts bar — party
+\n\n📅 25 October — Saturday
+\n\n🎉 From 16:00 — MTL City — afterparty
+\n\n\n🎟️ Participation
 \n\nThe festival is free, but advance registration is required.
 \nThe number of places is limited.
-\n📢 Stay tuned for updates:
-\nNews and announcements are published on the <a href="https://t.me/monteliberofestival">Montelibero Fest Telegram channel</a> and on the <a href="https://mtlfest.me/2025/en">website</a>. """
-            "out via @mtlfest_support_bot. "
-            "Our volunteers will get back to you as soon as possible.",
+\n\n📢 Stay tuned for updates:
+\nNews and announcements are published on the <a href="https://t.me/monteliberofestival">Montelibero Fest Telegram channel</a> and on the <a href="https://mtlfest.me/2026/en">website</a>.
+\nSee you there! 🤗""",
             "support_text": "For any questions message @mtlfest_support_bot — volunteers will reply as soon as possible.",
-            "show_ticket_text": "This is your free ticket to the main event on October, 5. You will need to show it at the gates for entrance on your mobile or printed. If you would like to attend other days of the festival please go to the website mtlfest.me/en and book them separately. Thank you",
+            "show_ticket_text": "This is your free ticket to Monteliber Fest, 23–25 October 2026. Show the QR at the entrance from your phone or print it. If your plans change — let the support team know.",
             "donate_button": "Donate",
             "ticket_button": "My Ticket",
             "calendar_button": "Schedule",
             "support_button": "Support",
             "back_button": "Back",
-            "ticket_start_text": "I'm here to help you register for Monteliber.Zaedno Fest 2025. Press Start to begin.",
+            "ticket_start_text": "I'm here to help you register for Monteliber Fest 2026. Press Start to begin.",
             "start_button": "Start",
             "ticket_country_text": "We'd love to know where you're based right now to plan better. Which country are you currently in?",
             "ticket_source_text": "How did you hear about the festival?",
             "ticket_dates_text": "Pick the days you plan to attend so we can manage venue capacity.",
-            "date_27_11": "27 November — Opening & workshops",
-            "date_28_11": "28 November — Lectures & afterparty",
+            "date_23_10": "23 October — Montelibero at Horoso bar & Fist club",
+            "date_24_10": "24 October — breakfast, lectures at Cube Hotel, party at 501 Darts",
+            "date_25_10": "25 October — MTL City afterparty",
             "continue_button": "Continue",
             "TicketUUID": ticket_uuid,
             "TicketKey": ticket_key,
@@ -350,11 +353,20 @@ async def mh_process_qr(message: Message, widget: MessageInput, dialog_manager: 
                 season = _find_ticket_season(user_data, qr_data)
                 if season:
                     await update_user_data(user_id, {f"tickets.{season}.last_scanned_at": datetime.utcnow()})
-                await message.reply("Успешно ! Можете присылать новый код ! или выйти в главное меню /start ")
-                await add_scan_log(admin_id=admin_id, user_id=user_id)
-
-            else:
-                await message.reply("Bad QR code =( or user not found")
+                    await message.reply(
+                        "Успешно ! Можете присылать новый код ! или выйти в главное меню /start "
+                    )
+                    await add_scan_log(admin_id=admin_id, user_id=user_id)
+                else:
+                    old_season = _find_ticket_season_any(user_data, qr_data)
+                    if old_season:
+                        logger.info("Rejected scan: ticket from season %s (user %s)", old_season, user_id)
+                        await message.reply(
+                            "Это билет прошлого сезона — на фестиваль 2026 нужен новый. "
+                            "Получите его через /start → «Мой билет»."
+                        )
+                    else:
+                        await message.reply("Bad QR code =( or user not found")
         else:
             await message.reply("Bad QR code =(")
     logger.info("Exiting: mh_process_qr")
@@ -383,8 +395,9 @@ async def on_dates_confirmed(c: CallbackQuery, button: Button, manager: DialogMa
     season = config.CURRENT_TICKET_SEASON
     async with config.lock:
         data = {
-            f"tickets.{season}.dates.date_27_11": manager.dialog_data.get("date_27_11", False),
-            f"tickets.{season}.dates.date_28_11": manager.dialog_data.get("date_28_11", False),
+            f"tickets.{season}.dates.date_23_10": manager.dialog_data.get("date_23_10", False),
+            f"tickets.{season}.dates.date_24_10": manager.dialog_data.get("date_24_10", False),
+            f"tickets.{season}.dates.date_25_10": manager.dialog_data.get("date_25_10", False),
         }
         await update_user_data(user_id, data)
 
@@ -396,15 +409,21 @@ window_ticket_dates = Window(
     Format("{ticket_dates_text}"),
     Group(
         Checkbox(
-            checked_text=Format("[✅] {date_27_11}"),
-            unchecked_text=Format("[  ] {date_27_11}"),
-            id="date_27_11",
+            checked_text=Format("[✅] {date_23_10}"),
+            unchecked_text=Format("[  ] {date_23_10}"),
+            id="date_23_10",
             on_state_changed=on_date_selected,
         ),
         Checkbox(
-            checked_text=Format("[✅] {date_28_11}"),
-            unchecked_text=Format("[  ] {date_28_11}"),
-            id="date_28_11",
+            checked_text=Format("[✅] {date_24_10}"),
+            unchecked_text=Format("[  ] {date_24_10}"),
+            id="date_24_10",
+            on_state_changed=on_date_selected,
+        ),
+        Checkbox(
+            checked_text=Format("[✅] {date_25_10}"),
+            unchecked_text=Format("[  ] {date_25_10}"),
+            id="date_25_10",
             on_state_changed=on_date_selected,
         ),
     ),
