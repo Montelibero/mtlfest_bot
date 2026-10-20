@@ -16,6 +16,8 @@ from aiogram_dialog.widgets.text import Format
 
 MAIN_DIALOG = Path(__file__).resolve().parent.parent / "routers" / "main_dialog.py"
 MAP_URL = "https://maps.app.goo.gl/q4ZJ8HM864vLig9J8"
+VENUE_23_10 = "Horošo bar & First club"
+STALE_VENUES = ("Horoso bar", "Fist club", "Horošo bar & Fist club")
 
 
 def _collection_texts() -> dict[str, dict[str, str]]:
@@ -116,6 +118,37 @@ def test_breakfast_venue_and_link(lang: str, breakfast: str) -> None:
     text = TEXTS[lang]["calendar_text"]
     assert breakfast in text
     assert f'<a href="{MAP_URL}">Cafe Pascucci</a>' in text
+
+
+@pytest.mark.parametrize(
+    ("lang", "schedule_fragment", "ticket_text"),
+    [
+        (
+            "ru",
+            "С 19:00 — Horošo bar & First club — Montelibero",
+            "23 октября — Montelibero в Horošo bar & First club",
+        ),
+        (
+            "en",
+            "From 19:00 — Horošo bar & First club — Montelibero",
+            "23 October — Montelibero at Horošo bar & First club",
+        ),
+    ],
+)
+def test_venue_23_10_spelling(lang: str, schedule_fragment: str, ticket_text: str) -> None:
+    assert schedule_fragment in TEXTS[lang]["calendar_text"]
+    assert TEXTS[lang]["date_23_10"] == ticket_text
+    for stale in STALE_VENUES:
+        for key in ("calendar_text", "date_23_10"):
+            assert stale not in TEXTS[lang][key], (key, stale)
+
+
+@pytest.mark.parametrize("lang", ["ru", "en"])
+def test_venue_name_keeps_caron_and_first(lang: str) -> None:
+    assert "š" in VENUE_23_10
+    assert "First" in VENUE_23_10
+    assert VENUE_23_10 in TEXTS[lang]["calendar_text"]
+    assert VENUE_23_10 in TEXTS[lang]["date_23_10"]
 
 
 @pytest.mark.parametrize("lang", ["ru", "en"])

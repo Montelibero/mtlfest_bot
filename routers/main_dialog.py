@@ -116,7 +116,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n\n",
             "calendar_text": """🎉 Программа Montelibero Fest 2026
 \n\n📅 23 октября — пятница
-\n\n🥂 С 19:00 — Horoso bar & Fist club — Montelibero
+\n\n🥂 С 19:00 — Horošo bar & First club — Montelibero
 \n\n📅 24 октября — суббота
 \n\n☕️ 10:00–12:00 — MTL завтрак (<a href="https://maps.app.goo.gl/q4ZJ8HM864vLig9J8">Cafe Pascucci</a>)
 \n\n🎤 12:00–20:00 — Cube Hotel: лекции и панельные дискуссии
@@ -141,7 +141,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "ticket_country_text": "Нам нужно немного информации, чтобы подготовить площадку. В какой стране ты сейчас живёшь?",
             "ticket_source_text": "Расскажи, откуда узнал о фестивале?",
             "ticket_dates_text": "Выбери дни, когда планируешь прийти. Это поможет нам рассчитать нагрузку на площадку.",
-            "date_23_10": "23 октября — Montelibero в Horoso bar & Fist club",
+            "date_23_10": "23 октября — Montelibero в Horošo bar & First club",
             "date_24_10": "24 октября — завтрак, лекции в Cube Hotel, вечеринка в 501 Darts",
             "date_25_10": "25 октября — MTL City afterparty",
             "continue_button": "Продолжить",
@@ -166,7 +166,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "<code>43RMnD3EDcHHL39eJPRqqDYhU9cWdGKABA3fetY8FNZwUQ9PNPGoxbZNSEaYKHYzeJMq2BsLpzrbhWCF7aueH4Tn7kTV7Pw</code>\n",
             "calendar_text": """🎉 Montelibero Fest 2026 programme
 \n\n📅 23 October — Friday
-\n\n🥂 From 19:00 — Horoso bar & Fist club — Montelibero
+\n\n🥂 From 19:00 — Horošo bar & First club — Montelibero
 \n\n📅 24 October — Saturday
 \n\n☕️ 10:00–12:00 — MTL breakfast (<a href="https://maps.app.goo.gl/q4ZJ8HM864vLig9J8">Cafe Pascucci</a>)
 \n\n🎤 12:00–20:00 — Cube Hotel: lectures and panel discussions
@@ -191,7 +191,7 @@ async def get_start_data(dialog_manager: DialogManager, state: FSMContext, **kwa
             "ticket_country_text": "We'd love to know where you're based right now to plan better. Which country are you currently in?",
             "ticket_source_text": "How did you hear about the festival?",
             "ticket_dates_text": "Pick the days you plan to attend so we can manage venue capacity.",
-            "date_23_10": "23 October — Montelibero at Horoso bar & Fist club",
+            "date_23_10": "23 October — Montelibero at Horošo bar & First club",
             "date_24_10": "24 October — breakfast, lectures at Cube Hotel, party at 501 Darts",
             "date_25_10": "25 October — MTL City afterparty",
             "continue_button": "Continue",
